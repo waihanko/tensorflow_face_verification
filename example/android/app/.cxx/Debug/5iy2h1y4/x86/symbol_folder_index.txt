@@ -1,0 +1,1 @@
+/Users/hangyi/StudioProjects/tensorflow_face_verification/example/build/app/intermediates/cxx/Debug/5iy2h1y4/obj/x86
