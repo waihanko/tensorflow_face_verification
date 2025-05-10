@@ -1,4 +1,5 @@
 # Flutter Face Verification (Face Embedding & Comparison)
+https://github.com/user-attachments/assets/f4248745-b9ac-4990-a3a6-bd8746047b2a
 
 This project provides face verification capabilities using [TensorFlow Lite](https://www.tensorflow.org/lite) and [Google ML Kit Face Detection](https://pub.dev/packages/google_mlkit_face_detection)  
 via a lightweight helper class built in Dart.
