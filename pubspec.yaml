@@ -1,7 +1,7 @@
 name: tensorflow_face_verification
 description: "A new Flutter project."
 version: 0.0.1
-homepage:
+homepage: https://github.com/waihanko/tensorflow_face_verification
 
 environment:
   sdk: ^3.7.2
