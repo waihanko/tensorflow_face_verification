@@ -1,5 +1,5 @@
 name: tensorflow_face_verification
-description: "A new Flutter project."
+description: "AI Powered Face Verification (Face Embedding & Comparison)"
 version: 0.0.1
 homepage: https://github.com/waihanko/tensorflow_face_verification
 
