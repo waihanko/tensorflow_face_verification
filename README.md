@@ -24,6 +24,19 @@ via a lightweight helper class built in Dart.
 - Offline use – no internet required
 ---
 
+## 🧪 Note
+This package is rely on [tflite_flutter](https://pub.dev/packages/tflite_flutter).
+
+🚨 This package may not work in the iOS simulator. It's recommended that you test with a physical device.
+
+🚨 When creating a release archive (IPA), the symbols are stripped by Xcode, so the command `flutter build ipa` may throw a `Failed to lookup symbol ... symbol not found` error. To work around this:
+
+1. In Xcode, go to **Target Runner > Build Settings > Strip Style**
+2. Change from **All Symbols** to **Non-Global Symbols**
+
+---
+
+
 ## 🚀 Getting Started
 
 ### 1. Add Your Model
