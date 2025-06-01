@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:tensorflow_face_verification/tensorflow_face_verification.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FaceVerification.init(modelPath: "assets/models/facenet.tflite");
   runApp(const MyApp());
@@ -27,7 +27,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 
 ///Face Compare Screen For Example
 class FaceCompareScreen extends StatefulWidget {
@@ -83,8 +82,10 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if(isLoading) CircularProgressIndicator(),
-          SizedBox(height: 48,),
+          if (isLoading) CircularProgressIndicator(),
+          SizedBox(
+            height: 48,
+          ),
           Row(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -123,8 +124,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
               setState(() {
                 isLoading = true;
               });
-              bool isTheSamePerson =
-              await faceService.verifySamePerson(image1, image2, threshold: 0.6);
+              bool isTheSamePerson = await faceService
+                  .verifySamePerson(image1, image2, threshold: 0.6);
               setState(() {
                 isLoading = false;
               });
@@ -150,8 +151,8 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
               setState(() {
                 isLoading = true;
               });
-              double similarityPoint =
-              await faceService.getSimilarityScoreFromFile(image1!, image2!);
+              double similarityPoint = await faceService
+                  .getSimilarityScoreFromFile(image1!, image2!);
               setState(() {
                 isLoading = false;
               });
@@ -201,18 +202,18 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
         ),
         child: isProcessImage
             ? const SizedBox(
-            width: 50,
-            height: 50,
-            child: Center(child: CircularProgressIndicator()))
+                width: 50,
+                height: 50,
+                child: Center(child: CircularProgressIndicator()))
             : image == null
-            ? Icon(icon, size: 50, color: Colors.grey)
-            : ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Image.file(
-            image,
-            fit: BoxFit.cover,
-          ),
-        ),
+                ? Icon(icon, size: 50, color: Colors.grey)
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      image,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
       ),
     );
   }
@@ -231,7 +232,7 @@ class VerifyButtonWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: ()=> onPress(),
+      onPressed: () => onPress(),
       style: ElevatedButton.styleFrom(
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         shape: RoundedRectangleBorder(

@@ -40,10 +40,10 @@ class FaceVerification {
   }
 
   Future<bool> verifySamePerson(
-      File? input1,
-      File? input2, {
-        double threshold = 0.6,
-      }) async {
+    File? input1,
+    File? input2, {
+    double threshold = 0.6,
+  }) async {
     if (input1 == null) {
       throw Exception("File for input 1 not found.");
     }
@@ -56,10 +56,7 @@ class FaceVerification {
   }
 
   /// Calculates the similarity score between two face image files.
-  Future<double> getSimilarityScoreFromFile(
-      File input1,
-      File input2,
-      ) async {
+  Future<double> getSimilarityScoreFromFile(File input1, File input2) async {
     final results = await Future.wait([
       extractFaceRegion(input1),
       extractFaceRegion(input2),
@@ -77,9 +74,9 @@ class FaceVerification {
 
   /// Calculates the similarity score between two face image .
   Future<double> getSimilarityScoreFromImage(
-      image_lib.Image image1,
-      image_lib.Image image2,
-      ) async {
+    image_lib.Image image1,
+    image_lib.Image image2,
+  ) async {
     final embeddings = await Future.wait([
       extractFaceEmbedding(image1),
       extractFaceEmbedding(image2),
@@ -101,10 +98,9 @@ class FaceVerification {
     );
 
     if (Platform.isIOS) {
-      final File? iosImageProcessed =
-      await _bakeImageOrientation(imageFile);
+      final File? iosImageProcessed = await _bakeImageOrientation(imageFile);
 
-      if(iosImageProcessed == null){
+      if (iosImageProcessed == null) {
         throw Exception("IosImage Processed File Not Found.");
       }
       inputImage = InputImage.fromFilePath(iosImageProcessed.path);
@@ -138,7 +134,13 @@ class FaceVerification {
       math.min(originalImage.width - x, originalImage.height - y),
     );
 
-    final cropped = image_lib.copyCrop(originalImage,x: x, y: y, width:  size, height:  size);
+    final cropped = image_lib.copyCrop(
+      originalImage,
+      x: x,
+      y: y,
+      width: size,
+      height: size,
+    );
     final resized = image_lib.copyResize(cropped, width: 160, height: 160);
 
     return resized;
@@ -168,15 +170,18 @@ class FaceVerification {
   /// Returns a list of floats representing the face embedding,
   /// or null if no face is detected or extraction fails.
   Future<List<double>> extractFaceEmbedding(image_lib.Image image) async {
-    final input = List.generate(1, (_) => List.generate(160, (y) {
-      return List.generate(160, (x) {
-        final pixel = image.getPixel(x, y);
-        final r = ((pixel.r) - 127.5) / 127.5;
-        final g = ((pixel.g) - 127.5) / 127.5;
-        final b = ((pixel.b) - 127.5) / 127.5;
-        return [r, g, b];
-      });
-    }));
+    final input = List.generate(
+      1,
+      (_) => List.generate(160, (y) {
+        return List.generate(160, (x) {
+          final pixel = image.getPixel(x, y);
+          final r = ((pixel.r) - 127.5) / 127.5;
+          final g = ((pixel.g) - 127.5) / 127.5;
+          final b = ((pixel.b) - 127.5) / 127.5;
+          return [r, g, b];
+        });
+      }),
+    );
 
     final output = List.filled(128, 0.0).reshape([1, 128]);
     _interpreter.run(input, output);
@@ -193,17 +198,20 @@ class FaceVerification {
       final path = directory.path;
       final filename = DateTime.now().millisecondsSinceEpoch.toString();
 
-      final image_lib.Image? capturedImage =
-      image_lib.decodeImage(await pickedFile.readAsBytes());
+      final image_lib.Image? capturedImage = image_lib.decodeImage(
+        await pickedFile.readAsBytes(),
+      );
 
-      final image_lib.Image orientedImage = image_lib.bakeOrientation(capturedImage!);
+      final image_lib.Image orientedImage = image_lib.bakeOrientation(
+        capturedImage!,
+      );
 
-      final imageToBeProcessed = await File('$path/$filename')
-          .writeAsBytes(image_lib.encodeJpg(orientedImage));
+      final imageToBeProcessed = await File(
+        '$path/$filename',
+      ).writeAsBytes(image_lib.encodeJpg(orientedImage));
 
       return imageToBeProcessed;
     }
     return null;
   }
-
 }
