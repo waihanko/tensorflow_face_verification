@@ -1,7 +1,8 @@
 name: tensorflow_face_verification
 description: "AI Powered Face Verification (Face Embedding & Comparison)"
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/waihanko/tensorflow_face_verification
+license: MIT
 
 environment:
   sdk: ^3.7.2
@@ -10,15 +11,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  image: ^4.0.15
-  google_mlkit_face_detection: ^0.11.0
+  image: ^4.5.4
+  google_mlkit_face_detection: ^0.13.1
   tflite_flutter: ^0.11.0
   path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 
 # For information on the generic Dart part of this file, see the

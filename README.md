@@ -3,8 +3,8 @@
 ![Screen Record](https://github.com/user-attachments/assets/7dcf7f8d-9e6a-4532-b628-cb1a7e70336a)
 
 
-This project provides face verification capabilities using [TensorFlow Lite](https://www.tensorflow.org/lite) and [Google ML Kit Face Detection](https://pub.dev/packages/google_mlkit_face_detection)  
-via a lightweight helper class built in Dart.
+This package delivers TensorFlow-powered face matching by leveraging Google ML Kit’s Face Detection, wrapped in a lightweight Dart helper class.
+It supports determining whether two faces belong to the same person and provides a similarity score for flexible comparisons.
 
 - 🧠 128D Face Embedding Generation (FaceNet model)
 - 🔍 ML Kit Face Detection with auto-cropping

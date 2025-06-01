@@ -5,12 +5,20 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:path_provider/path_provider.dart';
 
+/// Provides face verification capabilities using a TensorFlow Lite model.
+///
+/// Use [init] to load the model before calling other methods.
 class FaceVerification {
   static FaceVerification? _instance;
   static late final Interpreter _interpreter;
 
   FaceVerification._internal();
 
+  /// Initializes the face verification model from the provided asset path.
+  ///
+  /// Call this method before using [FaceVerification.instance].
+  ///
+  /// Throws an [Exception] if the model fails to load.
   static Future<void> init({required String modelPath}) async {
     try {
       _interpreter = await Interpreter.fromAsset(modelPath);
@@ -47,6 +55,7 @@ class FaceVerification {
     return similarity > threshold;
   }
 
+  /// Calculates the similarity score between two face image files.
   Future<double> getSimilarityScoreFromFile(
       File input1,
       File input2,
@@ -66,6 +75,7 @@ class FaceVerification {
     return await getSimilarityScoreFromImage(face1, face2);
   }
 
+  /// Calculates the similarity score between two face image .
   Future<double> getSimilarityScoreFromImage(
       image_lib.Image image1,
       image_lib.Image image2,
@@ -78,6 +88,12 @@ class FaceVerification {
     return getSimilarityScore(embeddings[0], embeddings[1]);
   }
 
+  /// Extracts a face embedding vector from the provided image.
+  ///
+  /// The returned vector can be used to compare faces (e.g., for verification).
+  ///
+  /// Returns a list of floats representing the face embedding,
+  /// or null if no face is detected or extraction fails.
   Future<image_lib.Image?> extractFaceRegion(File imageFile) async {
     InputImage inputImage;
     final faceDetector = FaceDetector(
@@ -85,8 +101,12 @@ class FaceVerification {
     );
 
     if (Platform.isIOS) {
-      final File iosImageProcessed =
-      await bakeImageOrientation(imageFile);
+      final File? iosImageProcessed =
+      await _bakeImageOrientation(imageFile);
+
+      if(iosImageProcessed == null){
+        throw Exception("IosImage Processed File Not Found.");
+      }
       inputImage = InputImage.fromFilePath(iosImageProcessed.path);
     } else {
       inputImage = InputImage.fromFile(imageFile);
@@ -118,30 +138,15 @@ class FaceVerification {
       math.min(originalImage.width - x, originalImage.height - y),
     );
 
-    final cropped = image_lib.copyCrop(originalImage, x, y, size, size);
+    final cropped = image_lib.copyCrop(originalImage,x: x, y: y, width:  size, height:  size);
     final resized = image_lib.copyResize(cropped, width: 160, height: 160);
 
     return resized;
   }
 
-  Future<List<double>> extractFaceEmbedding(image_lib.Image image) async {
-    // Resize and normalize the image
-    final input = List.generate(1, (_) => List.generate(160, (y) {
-      return List.generate(160, (x) {
-        final pixel = image.getPixel(x, y);
-        final r = ((image_lib.getRed(pixel)) - 127.5) / 127.5;
-        final g = ((image_lib.getGreen(pixel)) - 127.5) / 127.5;
-        final b = ((image_lib.getBlue(pixel)) - 127.5) / 127.5;
-        return [r, g, b];
-      });
-    }));
-
-    final output = List.filled(128, 0.0).reshape([1, 128]);
-    _interpreter.run(input, output);
-
-    return List<double>.from(output[0]);
-  }
-
+  /// Computes similarity score between two face embeddings.
+  ///
+  /// A higher score indicates higher similarity.
   double getSimilarityScore(List<double> a, List<double> b) {
     double dot = 0.0;
     double normA = 0.0;
@@ -156,7 +161,33 @@ class FaceVerification {
     return dot / (math.sqrt(normA) * math.sqrt(normB));
   }
 
-  bakeImageOrientation(File pickedFile) async {
+  /// Extracts a face embedding vector from the provided image.
+  ///
+  /// The returned vector can be used to compare faces (e.g., for verification).
+  ///
+  /// Returns a list of floats representing the face embedding,
+  /// or null if no face is detected or extraction fails.
+  Future<List<double>> extractFaceEmbedding(image_lib.Image image) async {
+    final input = List.generate(1, (_) => List.generate(160, (y) {
+      return List.generate(160, (x) {
+        final pixel = image.getPixel(x, y);
+        final r = ((pixel.r) - 127.5) / 127.5;
+        final g = ((pixel.g) - 127.5) / 127.5;
+        final b = ((pixel.b) - 127.5) / 127.5;
+        return [r, g, b];
+      });
+    }));
+
+    final output = List.filled(128, 0.0).reshape([1, 128]);
+    _interpreter.run(input, output);
+
+    return List<double>.from(output[0]);
+  }
+
+  /// Corrects the orientation of the input image if needed.
+  ///
+  /// This method ensures that the image is properly oriented before face detection.
+  Future<File?>? _bakeImageOrientation(File pickedFile) async {
     if (Platform.isIOS) {
       final directory = await getApplicationDocumentsDirectory();
       final path = directory.path;
