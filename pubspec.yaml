@@ -1,6 +1,6 @@
 name: tensorflow_face_verification
 description: "AI Powered Face Verification (Face Embedding & Comparison)"
-version: 0.1.1
+version: 0.1.2
 homepage: https://github.com/waihanko/tensorflow_face_verification
 license: MIT
 
