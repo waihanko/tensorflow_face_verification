@@ -2,10 +2,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:image/image.dart' as image_lib;
 import 'package:tflite_flutter/tflite_flutter.dart';
-import 'package:tflite_flutter_helper_plus/tflite_flutter_helper_plus.dart'
-as helper;
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
-import 'package:tflite_flutter_plus/src/bindings/types.dart' as tflp_internal;
+import 'package:path_provider/path_provider.dart';
 
 class FaceVerification {
   static FaceVerification? _instance;
@@ -13,7 +11,6 @@ class FaceVerification {
 
   FaceVerification._internal();
 
-  /// Initializes the singleton instance, model => facenet.tfflite
   static Future<void> init({required String modelPath}) async {
     try {
       _interpreter = await Interpreter.fromAsset(modelPath);
@@ -23,10 +20,8 @@ class FaceVerification {
     }
   }
 
-  /// Check if the service is initialized
   static bool get isInitialized => _instance != null;
 
-  /// Access the instance safely
   static FaceVerification get instance {
     if (!isInitialized) {
       throw Exception(
@@ -36,35 +31,26 @@ class FaceVerification {
     return _instance!;
   }
 
-  /// Check is the faces match
   Future<bool> verifySamePerson(
       File? input1,
       File? input2, {
         double threshold = 0.6,
       }) async {
-    if(input1 == null){
-      throw Exception("File for input 1 not found. Please check the file path and try again.");
+    if (input1 == null) {
+      throw Exception("File for input 1 not found.");
     }
-    if(input2 == null){
-      throw Exception("File for input 2 not found. Please check the file path and try again.");
+    if (input2 == null) {
+      throw Exception("File for input 2 not found.");
     }
-    final similarity = await getSimilarityScoreFromFile(input1,input2);
+
+    final similarity = await getSimilarityScoreFromFile(input1, input2);
     return similarity > threshold;
   }
 
-
-  /// Compare two face image files and return a similarity score (0 to 1)
   Future<double> getSimilarityScoreFromFile(
-      File? input1,
-      File? input2,
+      File input1,
+      File input2,
       ) async {
-    if (input1 == null || !input1.existsSync()) {
-      throw Exception("File for input 1 not found. Please check the file path and try again.");
-    }
-    if (input2 == null ||  !input2.existsSync()) {
-      throw Exception("File for input 2 not found. Please check the file path and try again.");
-    }
-
     final results = await Future.wait([
       extractFaceRegion(input1),
       extractFaceRegion(input2),
@@ -73,23 +59,17 @@ class FaceVerification {
     final face1 = results[0];
     final face2 = results[1];
 
-    if (face1 == null || face2 == null) throw Exception("No face detected.");
+    if (face1 == null || face2 == null) {
+      throw Exception("No face detected.");
+    }
 
     return await getSimilarityScoreFromImage(face1, face2);
   }
 
-  /// Compare two faces and return a similarity score (0 to 1)
   Future<double> getSimilarityScoreFromImage(
-      image_lib.Image? image1,
-      image_lib.Image? image2,
+      image_lib.Image image1,
+      image_lib.Image image2,
       ) async {
-    if (image1 == null) {
-      throw Exception("Image 1 not found. Please check the file path and try again.");
-    }
-    if (image2 == null) {
-      throw Exception("Image 2 not found. Please check the file path and try again.");
-    }
-
     final embeddings = await Future.wait([
       extractFaceEmbedding(image1),
       extractFaceEmbedding(image2),
@@ -98,14 +78,21 @@ class FaceVerification {
     return getSimilarityScore(embeddings[0], embeddings[1]);
   }
 
-  /// Detect and tightly crop the face
   Future<image_lib.Image?> extractFaceRegion(File imageFile) async {
-    final inputImage = InputImage.fromFile(imageFile);
+    InputImage inputImage;
     final faceDetector = FaceDetector(
       options: FaceDetectorOptions(performanceMode: FaceDetectorMode.accurate),
     );
 
-    final List<Face> faces = await faceDetector.processImage(inputImage);
+    if (Platform.isIOS) {
+      final File iosImageProcessed =
+      await bakeImageOrientation(imageFile);
+      inputImage = InputImage.fromFilePath(iosImageProcessed.path);
+    } else {
+      inputImage = InputImage.fromFile(imageFile);
+    }
+
+    final faces = await faceDetector.processImage(inputImage);
     if (faces.isEmpty) return null;
 
     final face = faces.first;
@@ -115,7 +102,7 @@ class FaceVerification {
     final originalImage = image_lib.decodeImage(bytes);
     if (originalImage == null) return null;
 
-    const double marginRatio = 0.08;
+    const marginRatio = 0.08;
     final int x = (boundingBox.left - boundingBox.width * marginRatio)
         .toInt()
         .clamp(0, originalImage.width - 1);
@@ -137,37 +124,55 @@ class FaceVerification {
     return resized;
   }
 
-  /// Generate embedding vector from cropped image
   Future<List<double>> extractFaceEmbedding(image_lib.Image image) async {
-    var inputImage = helper.TensorImage(tflp_internal.TfLiteType.float32);
-    inputImage.loadImage(image);
+    // Resize and normalize the image
+    final input = List.generate(1, (_) => List.generate(160, (y) {
+      return List.generate(160, (x) {
+        final pixel = image.getPixel(x, y);
+        final r = ((image_lib.getRed(pixel)) - 127.5) / 127.5;
+        final g = ((image_lib.getGreen(pixel)) - 127.5) / 127.5;
+        final b = ((image_lib.getBlue(pixel)) - 127.5) / 127.5;
+        return [r, g, b];
+      });
+    }));
 
-    final processor =
-    helper.ImageProcessorBuilder()
-        .add(helper.ResizeOp(160, 160, helper.ResizeMethod.bilinear))
-        .add(helper.NormalizeOp(127.5, 127.5))
-        .build();
+    final output = List.filled(128, 0.0).reshape([1, 128]);
+    _interpreter.run(input, output);
 
-    inputImage = processor.process(inputImage);
-
-    var outputBuffer = helper.TensorBufferFloat([1, 128]);
-    _interpreter.run(inputImage.buffer, outputBuffer.buffer);
-
-    return outputBuffer.getDoubleList();
+    return List<double>.from(output[0]);
   }
 
-  /// Cosine similarity between two embeddings
   double getSimilarityScore(List<double> a, List<double> b) {
-    double dotProduct = 0.0;
+    double dot = 0.0;
     double normA = 0.0;
     double normB = 0.0;
 
     for (int i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
+      dot += a[i] * b[i];
       normA += a[i] * a[i];
       normB += b[i] * b[i];
     }
 
-    return dotProduct / (math.sqrt(normA) * math.sqrt(normB));
+    return dot / (math.sqrt(normA) * math.sqrt(normB));
   }
+
+  bakeImageOrientation(File pickedFile) async {
+    if (Platform.isIOS) {
+      final directory = await getApplicationDocumentsDirectory();
+      final path = directory.path;
+      final filename = DateTime.now().millisecondsSinceEpoch.toString();
+
+      final image_lib.Image? capturedImage =
+      image_lib.decodeImage(await pickedFile.readAsBytes());
+
+      final image_lib.Image orientedImage = image_lib.bakeOrientation(capturedImage!);
+
+      final imageToBeProcessed = await File('$path/$filename')
+          .writeAsBytes(image_lib.encodeJpg(orientedImage));
+
+      return imageToBeProcessed;
+    }
+    return null;
+  }
+
 }

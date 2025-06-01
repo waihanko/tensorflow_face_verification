@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:glimmer/glimmer.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:tensorflow_face_verification/tensorflow_face_verification.dart';
@@ -127,7 +126,7 @@ class _FaceCompareScreenState extends State<FaceCompareScreen> {
                 isLoading = true;
               });
               double similarityPoint =
-              await faceService.getSimilarityScoreFromFile(image1, image2);
+              await faceService.getSimilarityScoreFromFile(image1!, image2!);
               setState(() {
                 isLoading = false;
               });
